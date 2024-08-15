@@ -1,6 +1,12 @@
 # The URL the site will be built for
 base_url = "zola.malexple.ru"
 
+# Отображается в RSS фиде
+title = "Блог Malexple"
+description = "Инструкции в сфере IT технологий и open-source."
+author = "malex[le"
+default_language = "en"
+
 # Следует ли автоматически компилировать все файлы Sass в каталоге sass
 compile_sass = false
 
@@ -13,6 +19,21 @@ minify_html = false
 
 # Если установлено значение "true", atom/rss фид генерируется автоматически.
 generate_feeds = true
+
+# Имя файла для фида. Также используется как имя файла шаблона.
+# По умолчанию "atom.xml", который имеет встроенный шаблон, отображающий ленту Atom 1.0.
+# Существует также встроенный шаблон "rss.xml", который отображает канал RSS 2.0.
+feed_filenames = ["rss.xml"]
+
+
+# Количество статей для включения в фид rss ленту. Все элементы включены,
+# если это ограничение не установлено (по умолчанию).
+# feed_limit = 20
+
+taxonomies = [
+    {name = "categories", feed = true},
+    {name = "tags", feed = true},
+]
 
 [search]
 index_format = "elasticlunr_json"
