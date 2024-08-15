@@ -1,4 +1,11 @@
-# Как запустить PostgreSQL на Windows без установки
++++
+title = "Как запустить PostgreSQL на Windows без установки"
+draft = false
+date = 2024-10-15
+[taxonomies]
+categories = ["database"]
+tags = ["postgres", "automation"]
++++
 
 Для начала необходимо скачать zip архив с сайта https://www.enterprisedb.com/download-postgresql-binaries
 Данный способ будет работать для 16, 15 и 14 версии PostgreSQL. Может будет работать для других версий, но это я уже не проверял. Скачанный zip нужно распаковать, и в корне новой папки PostgreSQL, создать файл с расширением *.bat. 
