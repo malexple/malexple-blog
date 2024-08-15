@@ -21,7 +21,7 @@ body {
     )
     top right/300% 300%;
   color: #fff;
-  font-family: "Cozette";
+  font-family: "OpenSans";
   font-size: 16px;
   position: relative;
   height: 100%;
@@ -290,11 +290,10 @@ footer {
 }
 
 /* Шрифт страницы
- * Cozette классный но на длительных постах трудно читать (либо это из-за того что я сонный)
  * TODO: Нужно выбрать более приятно читабельный шрифт */
 @font-face {
   font-display: swap;
-  font-family: "Cozette";
+  font-family: "OpenSans";
   size-adjust: 120%;
-  src: url("/assets/fonts/Cozette/CozetteVector.ttf") format("truetype");
+  src: url("/assets/fonts/OpenSans/OpenSans.ttf") format("truetype");
 }
