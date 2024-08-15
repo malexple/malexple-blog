@@ -1,0 +1,55 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <title>{% block title %}{% endblock title %}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic">
+    <style>
+        .center {
+            margin: 0 auto;
+        }
+
+        nav {
+            position: absolute;
+        }
+
+        main {
+            padding-top: 3em;
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <nav class="demo">
+        <a href="/" class="brand">
+            <img src="/monomadic-text-black.png" width="150px" height="100%">
+        </a>
+        <!-- responsive-->
+        <input id="bmenub" type="checkbox" class="show">
+        <label for="bmenub" class="burger pseudo button">&#9776;</label>
+
+        <div class="menu">
+            <a href="/posts" class="pseudo button icon-picture">Articles</a>
+        </div>
+    </nav>
+</header>
+
+<main class="flex five">
+    <div class="search-container">
+        <input id="search" type="search" placeholder="Search...">
+        <div class="search-results">
+            <div class="search-results__items"></div>
+        </div>
+    </div>
+
+    {% block content %}{% endblock content %}
+</main>
+
+<script type="text/javascript" src="{{ get_url(path="elasticlunr.min.js") }}"></script>
+<script type="text/javascript" src="{{ get_url(path="search.js") }}"></script>
+</body>
+
+</html>
