@@ -1,5 +1,5 @@
 # The URL the site will be built for
-base_url = "http://zola.malexple.ru/"
+base_url = "zola.malexple.ru"
 
 # Следует ли автоматически компилировать все файлы Sass в каталоге sass
 compile_sass = false
