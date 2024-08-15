@@ -296,5 +296,5 @@ footer {
   font-display: swap;
   font-family: "Cozette";
   size-adjust: 120%;
-  src: url("/assets/fonts/Cozette/CozetteVector.ttf") format("truetype");
+  src: url("/assets/fonts/OpenSans/ofont.ru_OpenSans.ttf") format("truetype");
 }
