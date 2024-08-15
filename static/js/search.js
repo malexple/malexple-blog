@@ -143,7 +143,7 @@ function initSearch() {
   };
   var currentTerm = "";
   var index;
-
+  
   var initIndex = async function () {
     if (index === undefined) {
       index = fetch("/search_index.en.json")
@@ -158,8 +158,6 @@ function initSearch() {
   }
 
   $searchInput.addEventListener("keyup", debounce(async function() {
-		console.log("keyup");
-
     var term = $searchInput.value.trim();
     if (term === currentTerm) {
       return;
@@ -172,9 +170,6 @@ function initSearch() {
     }
 
     var results = (await initIndex()).search(term, options);
-
-		console.log(results);
-
     if (results.length === 0) {
       $searchResults.style.display = "none";
       return;

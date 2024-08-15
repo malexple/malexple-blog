@@ -1,55 +1,73 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="ru">
 
 <head>
-    <title>{% block title %}{% endblock title %}</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic">
-    <style>
-        .center {
-            margin: 0 auto;
-        }
-
-        nav {
-            position: absolute;
-        }
-
-        main {
-            padding-top: 3em;
-        }
-    </style>
+	<meta charset="utf-8">
+	<!--Это будет видно на вкладке браузера-->
+	<!--Наименования загаловков вкладок-->
+	{% if page.title %}
+    <title>{{ page.title }}</title>
+	{% else %}
+    {% if section.title %}
+    <title>{{ section.title }}</title>
+	{% else %}
+    <title>Блог Malexple</title>
+	{% endif %}
+	{% endif %}
+	<!--Resize текста и постов для смартфонов-->
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!--TODO: Иконка во вкладке браузера-->
+	<!--<link rel="icon" type="image/png" href="/favicon.ico"> -->
+	<!--RSS автообнаружение-->
+	{% block rss %}
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="{{ get_url(path="rss.xml", trailing_slash=false) }}">
+	{% endblock %}
+	<!--Стилизация сайта-->
+	<link rel="stylesheet" href="/assets/css/style.css">
+	<!--Предзагрузка ассетов для оптимизации сайта-->
+	<link rel="preload" href="/assets/fonts/Cozette/CozetteVector.ttf" as="font" type="font/ttf"
+		crossorigin="anonymous">
+	<link rel="preload" href="/assets/css/comparison.css" as="style">
+	<!--Таблички-->
+	<link rel="stylesheet" href="/assets/css/comparison.css">
 </head>
 
 <body>
-<header>
-    <nav class="demo">
-        <a href="/" class="brand">
-            <img src="/malexple-text-black.png" width="150px" height="100%">
-        </a>
-        <!-- responsive-->
-        <input id="bmenub" type="checkbox" class="show">
-        <label for="bmenub" class="burger pseudo button">&#9776;</label>
-
-        <div class="menu">
-            <a href="/posts" class="pseudo button icon-picture">Articles</a>
-        </div>
-    </nav>
-</header>
-
-<main class="flex five">
-    <div class="search-container">
-        <input id="search" type="search" placeholder="Search...">
-        <div class="search-results">
-            <div class="search-results__items"></div>
-        </div>
-    </div>
-
-    {% block content %}{% endblock content %}
-</main>
-
-<script type="text/javascript" src="{{ get_url(path="elasticlunr.min.js") }}"></script>
-<script type="text/javascript" src="{{ get_url(path="search.js") }}"></script>
+	<div class="contents">
+		<div class="twocols">
+			<div class="navcol">
+				<nav>
+					<div class="fixedcol">
+						<h3>Навигация</h3>
+						<ul>
+							<li> <a href="/">Главная</a></li>
+							<li> <a href="/posts">Посты</a></li>
+							<li> <a href="/tags">Теги</a></li>
+							<li> <a href="/categories">Категории</a></li>
+							<li> <a href="/pages/search">Поиск</a></li>
+						</ul>
+					</div>
+				</nav>
+			</div>
+			<div class="maincol">
+				{% block content %}{% endblock %}
+				<footer class="center">
+					<hr>
+					<div class="sociallinks">
+						<!--TODO: добавить EMAIL-->
+						<a title="Я на GitHub" href="https://github.com/malexple" target="_blank"
+							rel="noopener nofollow noreferrer" class="eachsociallinks"><img
+								src="/assets/images/social-icons/github.png" alt="GitHub"></a>
+					</div>
+					<!-- TODO: Добавить URL лицензии -->
+					<p><span class="copyleft">&copy;</span> Авторское право <a href="/">Malexple</a>, <a href="!TODO!"
+							target="_blank" rel="noopener nofollow noreferrer">AGPL-3.0</a> лицензированный.</p>
+					<p>Работает на <a href="https://www.getzola.org/" target="_blank"
+							rel="noopener nofollow noreferrer">zola</a>.</p>
+				</footer>
+			</div>
+		</div>
+	</div>
 </body>
 
 </html>
