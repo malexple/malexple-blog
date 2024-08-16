@@ -35,6 +35,6 @@ Information was taken from here
 
 Ну и напоследок. Если вам надо сконфигурировать PostgreSQL под определенные возможности железки есть сайт для генерации настроек. Там вы указывает операционную систему. Количество ядер, памяти и другое.
 
-https://www.pgconfig.org/
-https://habr.com/ru/sandbox/201774/
+[www.pgconfig.org](https://www.pgconfig.org/)
+[habr.com](https://habr.com/ru/sandbox/201774/)
 
