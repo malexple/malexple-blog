@@ -21,7 +21,7 @@ body {
     )
     top right/300% 300%;
   color: #fff;
-  font-family: "Roboto";
+  font-family: "VictorMono";
   font-size: 16px;
   position: relative;
   height: 100%;
@@ -293,7 +293,7 @@ footer {
  * TODO: Нужно выбрать более приятно читабельный шрифт */
 @font-face {
   font-display: swap;
-  font-family: "Roboto";
+  font-family: "VictorMono";
   size-adjust: 120%;
-  src: url("/assets/fonts/Roboto/Roboto-Light.ttf") format("truetype");
+  src: url("/assets/fonts/VictorMono/VictorMono-ThinOblique.otf") format("truetype");
 }
