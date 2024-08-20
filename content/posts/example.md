@@ -8,4 +8,4 @@ tags = ["example"]
 +++
 
 Example
-![img.png](img.png)
+![img.png](example/img.png)
