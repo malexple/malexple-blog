@@ -21,7 +21,7 @@ body {
     )
     top right/300% 300%;
   color: #fff;
-  font-family: "VictorMono";
+  font-family: "times";
   font-size: 16px;
   position: relative;
   height: 100%;
@@ -293,7 +293,7 @@ footer {
  * TODO: Нужно выбрать более приятно читабельный шрифт */
 @font-face {
   font-display: swap;
-  font-family: "VictorMono";
+  font-family: "times";
   size-adjust: 120%;
-  src: url("/assets/fonts/VictorMono/VictorMono-ExtraLight.otf") format("truetype");
+  src: url("/assets/fonts/times/times.ttf") format("truetype");
 }
