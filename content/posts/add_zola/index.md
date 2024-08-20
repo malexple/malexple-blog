@@ -1,6 +1,6 @@
 +++
 title = "Разворачиваем статический генератор zola в proxmox"
-draft = true
+draft = false
 date = 2024-08-20
 [taxonomies]
 categories = ["blogs", "proxmox"]
