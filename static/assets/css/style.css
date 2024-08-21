@@ -183,7 +183,9 @@ pre {
 	margin-bottom: 9px;
 }
 
-
+.mermaid {
+    background-color: grey;
+}
 
 /* Resize картинок для смартфонов*/
 img {
