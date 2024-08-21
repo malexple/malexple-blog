@@ -105,7 +105,7 @@ webhook -hooks /root/webhook/hooks.json -ip "192.168.30.26" -verbose
 
 После настройки сервера zola, его как-то надо обновлять и вносить в него изменения. Это можно сделать через webhook-и. В чем идея? Проект храним в github. В github настраиваем для нашего проекта webhook. Если вносим изменения в master ветку, то отправлется запрос на сервер zola. На сервере запускается скрипт, который подтягивает изменения с github, пересобирает и запускает. На сервере могут быть и другие сервисы поэтому все запросы приходят на сервер nginx, который маршрутизирует запросы. Для нас это поддоменое имя zola.malexple.ru. На www.malexple.ru или git.malexple.ru находится другой ресурс.
 
-```mermaid
+{% mermaid() %}
 graph LR
 I[internet] --> |http://zola.malexple.ru| N{Nginx}
 G[gitHub] --> |http://zola.malexple.ru/webhook/redeploy-webhook| N{Nginx}
@@ -113,8 +113,7 @@ N --> |http://192.168.30.26:80/..| Z[zola]
 N --> |http://192.168.30.26:9000/webhook/..| W[webhook server]
 W --> B[bash script]
 B --> |git pull, run buld, start zola| Z[Zola]
-```
-
+{% end %}
 
 
 
