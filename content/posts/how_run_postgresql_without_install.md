@@ -1,7 +1,7 @@
 +++
 title = "Как запустить PostgreSQL на Windows без установки"
 draft = false
-date = 2024-10-15
+date = 2024-08-15
 [taxonomies]
 categories = ["database"]
 tags = ["postgres", "automation"]
