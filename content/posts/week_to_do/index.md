@@ -1,5 +1,5 @@
 +++
-title = "Планер на неделю онлайн WeektoDo"
+title = "Планер на неделю онлайн WeekToDo"
 draft = false
 date = 2024-08-26
 [taxonomies]
@@ -13,7 +13,7 @@ WeekToDo — это бесплатный еженедельный планиро
 Проект на gitHub находится тут [WeekToDo](https://github.com/manuelernestog/weektodo)
 
 
-Добавляем доменное имя третьего уровня **weektodo.malexple.ru** регистратора доменных имен.
+Добавляем доменное имя третьего уровня **weektodo.malexple.ru** у регистратора доменных имен.
 
 ```
 apk update
@@ -21,9 +21,6 @@ apk add yarn
 yarn version
 ```
 ## Установка WeekToDo в LXC контейнер на alpine в proxmox
-![image-20240823160415798](image-20240823160415798.png)
-
-
 
 ```
 cd ~
@@ -34,8 +31,9 @@ git clone https://github.com/manuelernestog/weektodo
 cd weektodo
 yarn install --ignore-engines
 yarn run serve &// to run web version
-
 ```
+
+![image-20240823160415798](image-20240823160415798.png)
 
 После запуска сервера вы увидите:
 
@@ -140,7 +138,7 @@ module.exports = {
 }
 ```
 
-общий файл будет в этом случае выглядеть так:
+Общий файл будет в этом случае выглядеть так:
 
 ```json
 module.exports = {
