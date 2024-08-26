@@ -184,6 +184,6 @@ module.exports = {
 
 ## Заключение 
 
-Программой можно пользоваться по адресу https://weektodo.malexple.ru
+Программой можно пользоваться по адресу [https://weektodo.malexple.ru](https://weektodo.malexple.ru)
 
 Не забывайте сохранять запланированные задачи. 
