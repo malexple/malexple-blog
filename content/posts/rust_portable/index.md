@@ -25,12 +25,7 @@ rust-1.80.1-x86_64-pc-windows-gnu.msi
 curl.exe --output rust-1.80.1-x86_64-pc-windows-gnu.msi --url https://static.rust-lang.org/dist/rust-1.80.1-x86_64-pc-windows-gnu.msi
 )
 ```
-
-
-
-Выбираем Advenced
-
-![image-20240902103730711](image-20240902103730711.png
+Запуститься exist rust-1.80.1-x86_64-pc-windows-gnu.msi выбираем Advenced.
 
 Указываем путь где будет лежать программа
 
@@ -125,4 +120,4 @@ cargo new hello_cargo
 
 ![image-20240902145356988](image-20240902145356988.png)
 
-НЕа
+Сборку под USB опишу позже
