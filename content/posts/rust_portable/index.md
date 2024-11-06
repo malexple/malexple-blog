@@ -17,7 +17,7 @@ tags = ["rust"]
 
 Создаем файл **rust-install.cmd**
 
-```bash
+```sh
 rem скачиваем файл установки, если есть запускаем
 if exist rust-1.80.1-x86_64-pc-windows-gnu.msi (
 rust-1.80.1-x86_64-pc-windows-gnu.msi
@@ -43,7 +43,7 @@ curl.exe --output rust-1.80.1-x86_64-pc-windows-gnu.msi --url https://static.rus
 
 По идее на этом все. Можно программировать. Если в терминале спросить версию, то будет выведено:
 
-```shell
+```sh
 d:\program\portable-rust>rustc --version
 rustc 1.80.1 (3f5fd8dd4 2024-08-06)
 ```
@@ -58,7 +58,7 @@ rustc 1.80.1 (3f5fd8dd4 2024-08-06)
 
 Создаем файл set-ev-rust.cmd в него помещаем следующие команды
 
-```shell
+```sh
 setx DRIVE "%cd%"
 setx RUST_HOME "%DRIVE%\rust"
 setx RUST_PATH "%DRIVE%\bin"
@@ -81,7 +81,7 @@ setx PATH "%PATH%;%DRIVE%\bin;%MINGW_PATH%\bin;%MINGW_PATH%\msys\1.0\bin;%MINGW_
 
 Так как на gitHub есть ограничение на размер файлов 100 Мб, а пушить 600 Мб не хочется. То мы помещаем папки по отдельным zip архивам
 
-```shell
+```sh
 tar -a -c -f portable-rust_1.zip bin etc
 tar -a -c -f portable-rust_2.zip lib libexec
 tar -a -c -f portable-rust_3.zip share
@@ -89,7 +89,7 @@ tar -a -c -f portable-rust_3.zip share
 
 Создаем отдельный скрипт install-pertable.cmd и помещаем следующие команды:
 
-```shell
+```sh
 tar -xf portable-rust_1.zip
 tar -xf portable-rust_2.zip
 tar -xf portable-rust_3.zip

@@ -99,7 +99,7 @@ services:
 
 ## Добавление настроек в nginx
 
-```shell
+```sh
 server {
     listen 80;
     server_name affine.malexple.ru;
