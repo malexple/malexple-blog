@@ -1,6 +1,6 @@
 +++
 title = "Разворачиваем AFFiNE аналог Notion"
-draft = true
+draft = false
 date = 2024-11-06
 [taxonomies]
 categories = ["blogs", "affine", "docker"]
