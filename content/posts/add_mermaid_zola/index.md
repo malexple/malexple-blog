@@ -8,7 +8,7 @@ tags = ["mermaid", "markdown", "zola"]
 
 +++
 ## Что такое mermaid
-Это проект https://mermaid.js.org/intro/getting-started.html позволяющий отображать графики и диаграммы в markdown.
+Это проект [Mermaid](https://mermaid.js.org/intro/getting-started.html) позволяющий отображать графики и диаграммы в markdown.
 
 {% mermaid() %}
 gitGraph
@@ -76,10 +76,10 @@ classDiagram
 ```
 
 ![base_template.png](base_template.png)
-На данный момент последняя версия 11.4.0 все остальные версии mermaid можно посмотреть тут https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/
+На данный момент последняя версия 11.4.0 все остальные версии mermaid можно посмотреть тут [MermaidJs](https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/)
 
 ## Добавление shortcodes mermaid в zola
-Дополнительно почитать, что такое shortcodes можно тут https://www.getzola.org/documentation/content/shortcodes/
+Дополнительно почитать, что такое shortcodes можно тут [Shortcodes](https://www.getzola.org/documentation/content/shortcodes/)
 
 Если коротко, это небольшие вставки кода по шаблону в разных частях страниц. И если нужно изменить что-то в shortcodes изменения вносятся один раз в шаблоне и применяются везде где он вставлен.
 
@@ -124,6 +124,6 @@ classDiagram
 На выходе получим серый фон для диаграмм.
 ![gray_style_mermaid.png](gray_style_mermaid.png)
 
-Дополнительно почитать про стили в mermaid можно тут https://mermaid.js.org/config/theming.html
+Дополнительно почитать про стили в mermaid можно тут [Style Mermaid](https://mermaid.js.org/config/theming.html)
 
 
