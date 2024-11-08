@@ -107,14 +107,14 @@ classDiagram
 ```
 Но в zola чтобы статический генератор правильно сгенерировал странички нужно ```mermaid заменить на **{%&nbsp;mermaid()&nbsp;%}**
 ```
-    {%mermaid() %}
+    {%mermaid()%}
         classDiagram
         class BankAccount
         BankAccount : +String owner
         BankAccount : +Bigdecimal balance
         BankAccount : +deposit(amount)
         BankAccount : +withdrawal(amount)
-    {% end%}
+    {%end%}
 ```
 
 ## Правка стилей в mermaid
