@@ -4,7 +4,7 @@ base_url = "zola.malexple.ru"
 # Отображается в RSS фиде
 title = "Блог Malexple"
 description = "Инструкции в сфере IT технологий и open-source."
-author = "malex[le"
+author = "malexple"
 default_language = "en"
 
 # Следует ли автоматически компилировать все файлы Sass в каталоге sass
