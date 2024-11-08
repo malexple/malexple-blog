@@ -81,9 +81,9 @@ classDiagram
 ## Добавление shortcodes mermaid в zola
 Дополнительно почитать, что такое shortcodes можно тут https://www.getzola.org/documentation/content/shortcodes/
 
-Если коротко, это небольшие вставки кода по шаблону в разных частях страниц. И если нужно изменить что-то в shortcodes изменения вносятся один раз в шаблоне и применяется везде где он вставлен.
+Если коротко, это небольшие вставки кода по шаблону в разных частях страниц. И если нужно изменить что-то в shortcodes изменения вносятся один раз в шаблоне и применяются везде где он вставлен.
 
-В моем случае в папку templates добавляем папку shortcodes файл mermaid.html
+В моем случае в папку templates добавляем папку shortcodes и файл mermaid.html
 ![shortcodes_mermaid.png](shortcodes_mermaid.png)
 
 Со следующим кодом:
@@ -105,16 +105,16 @@ classDiagram
         BankAccount : +withdrawal(amount)
     ```
 ```
-Но в zola чтобы статический генератор правильно сгенерировал странички нужно ```mermaid заменить на 
+Но в zola чтобы статический генератор правильно сгенерировал странички нужно ```mermaid заменить на **{%&nbsp;mermaid()&nbsp;%}**
 ```
-{% mermaid() %}
+    {%&nbsp;mermaid()&nbsp;%}
         classDiagram
         class BankAccount
         BankAccount : +String owner
         BankAccount : +Bigdecimal balance
         BankAccount : +deposit(amount)
         BankAccount : +withdrawal(amount)
-{% end %}
+    {%&nbsp;end&nbsp;%}
 ```
 
 ## Правка стилей в mermaid
