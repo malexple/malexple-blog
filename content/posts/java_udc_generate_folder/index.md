@@ -95,3 +95,81 @@ java .\UTCGenerateFolder.java
 ```
 
 ### Пишем скрипт создания папок
+
+````java
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+public class UTCGenerateFolder {
+    public static void main(String[] args) throws IOException {
+        Locale locale = Locale.getDefault();
+        ResourceBundle rb = ResourceBundle.getBundle("udc", locale);
+        System.out.println(getFolderName(rb, "00"));
+        System.out.println(getFolderName(rb, "00.004"));
+        System.out.println(getFolderName(rb, "00.008"));
+
+        Class clazz = UTCGenerateFolder.class;
+        InputStream inputStream = clazz.getResourceAsStream("/udc.txt");
+        String data = readFromInputStream(inputStream, rb);
+        System.out.println(data);
+    }
+
+    private static String readFromInputStream(InputStream inputStream, ResourceBundle rb)
+            throws IOException {
+        StringBuilder resultStringBuilder = new StringBuilder();
+        List<String> pathNames = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            int level = 0;
+            while ((line = br.readLine()) != null) {
+                String udcCode = line.replaceAll("\\t[^\\t]+$", "");
+                if (udcCode.startsWith(" ")) {
+                    level = udcCode.split(" {4}").length - 1;
+                    udcCode = udcCode.replaceAll(" ", "");
+                } else {
+                    level = 0;
+                }
+                if (rb.containsKey(udcCode)) {
+                    String folderName = getFolderName(rb, udcCode);
+                    String directoryPath = generateFolderPath(folderName, pathNames, level);
+
+                    File directory = new File("test" + directoryPath);
+                    boolean directoryCreated = directory.mkdir();
+
+                    if (directoryCreated) {
+                        System.out.println("Directory created successfully at: " + directoryPath);
+                    } else {
+                        System.out.println("Failed to create directory. It may already exist at: " + directoryPath);
+                    }
+                    pathNames.add(level, folderName);
+
+                } else {
+                    System.out.println("folderName not in resources: " + udcCode);
+                }
+                resultStringBuilder.append(line).append("\n");
+            }
+        }
+        return resultStringBuilder.toString();
+    }
+
+    private static String generateFolderPath(String folderName, List<String> pathNames, int level) {
+        StringBuilder result = new StringBuilder();
+        for (int index = 0; index < level-1; index++) {
+            result.append("\\").append(pathNames.get(index));
+        }
+        return result.append("\\").append(folderName).toString();
+    }
+
+    private static String getFolderName(ResourceBundle rb, String udcCode) {
+        String folderName = rb.getString(udcCode);
+        folderName = folderName.replaceAll(":","").replaceAll("/*","")
+                .replaceAll("/\"","").replaceAll("//","")
+                .replaceAll("\\?","").replaceAll("\"","")
+                .replaceAll("/|","").replaceAll("<","").replaceAll(">","");
+        return folderName;
+    }
+}
+````
