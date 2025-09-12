@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block books %}
+{% block content %}
 
 <h1 class="title">
   {{ page.title }}
@@ -36,5 +36,4 @@
 	</aside>
 {% endif %}
 
-{{ page.books | safe }}
-{% endblock books %}
+{% endblock content %}

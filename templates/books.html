@@ -6,7 +6,7 @@
 </h1>
 <ul>
     <!-- Если вы используете нумерацию страниц, section.pages будет пустым. Вам нужно использовать объект paginator -->
-    {% for page in paginator.books %}
+    {% for page in paginator.pages %}
     <li>{{[ page.date | date(format="%F") ]}}<a href="{{ page.permalink | safe }}"> {{ page.title }}</a></li>
     {% endfor %}
 </ul>
