@@ -3,7 +3,7 @@ title = "Философия Java"
 draft = false
 date = 2024-11-06
 [taxonomies]
-categories = ["books"]
+categories = ["it"]
 tags = ["java"]
 
 +++
