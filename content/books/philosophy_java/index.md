@@ -4,6 +4,7 @@ draft = false
 date = 2024-11-06
 [taxonomies]
 categories = ["books"]
+books = ["Философия Java"]
 tags = ["java"]
 
 +++
