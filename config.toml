@@ -32,8 +32,7 @@ feed_filenames = ["rss.xml"]
 
 taxonomies = [
     {name = "categories", feed = true},
-    {name = "tags", feed = true},
-    {name = "books", feed = true}
+    {name = "tags", feed = true}
 ]
 
 [search]

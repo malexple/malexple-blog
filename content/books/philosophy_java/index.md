@@ -5,7 +5,6 @@ date = 2024-11-06
 [taxonomies]
 categories = ["books"]
 tags = ["java"]
-books = ["Философия Java"]
 
 +++
 
