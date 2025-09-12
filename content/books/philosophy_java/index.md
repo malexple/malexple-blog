@@ -4,10 +4,11 @@ draft = false
 date = 2024-11-06
 [taxonomies]
 categories = ["books"]
-books = ["Философия Java"]
 tags = ["java"]
+books = ["Философия Java"]
 
 +++
+
 
 Брюс Эккель - Философия Java (4-е полное издание)
 
