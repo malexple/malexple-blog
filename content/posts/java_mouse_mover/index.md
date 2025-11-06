@@ -1,6 +1,6 @@
 +++
 title = "Пишем скрипт на java меремещающий курсор раз в минуту"
-draft = true
+draft = false
 date = 2025-11-06
 [taxonomies]
 categories = ["java"]
