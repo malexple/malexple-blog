@@ -20,7 +20,7 @@ tags = ["java", "book", "udk"]
 
 ## Техническое задание
 1. Скрипт должен уметь создавать структуру папок
-2. Параметрами должно управляться создание вложенных каталогов и без вложенности
+2. Параметрами должно управляться: создание вложенных каталогов, без вложенности
 3. Параметрами должен задаваться некий формат названий папок
    * [Номер УДК][Полное название]
    * [Полное название]
@@ -31,6 +31,7 @@ tags = ["java", "book", "udk"]
 4. Название папок могут создаваться на любом языке
 5. Список УДК с названиями должен быть представлен одним файлом в виде иерархии без бд
 6. Скрипт может создавать требуемую структуру папок по определенному коду УДК 
+7. Должен быть файл предварительных настроек
 
 ## Проблемы
 Именование папок имеет свои ограничения по символам. Поэтому при создании мы эти символы будем отбрасывать.
@@ -53,10 +54,10 @@ tags = ["java", "book", "udk"]
 
 Переходим на сайт https://www.teacode.com/online/udc/ и копируем страницу. Выделенный текст вставляем в regexp.txt. Далее чтобы не заниматься лишними действиями, составим регулярное выражение, которое будет выделать то, что нам нужно.
 Для выделения по регулярному выражению я использую Idea Community Edition.
-Регулярное выражение выглядит так: **^\d+(?:\.\d+)*\t[^\t]+** 
+Регулярное выражение выглядит так: ```**^\d+(?:\.\d+)*\t[^\t]+**```
 Само регулярное выражение, я попросил составить нейросеть. Это заняло не больше 10 минут, с повторными запросами и экспериментами.
 ![img_1.png](img_1.png)
-Чтобы выделить нужный нам текст нажимаем Ctrl+Alt+Shift+J или соответствующую кнопку с правой стороны от регулярного выражения.
+Чтобы выделить нужный нам текст нажимаем **Ctrl+Alt+Shift+J** или соответствующую кнопку с правой стороны от регулярного выражения.
 
 Далее переходим в следующий раздел на сайте https://www.teacode.com/online/udc/00/00.html и так же копируем текст и вставляем в regexp.txt с последующим выделением нужного текста и вставки в udc.txt
 У меня получилась следующая структура, которую при желании можно дополнить. Или оставить, только то что нужно.
@@ -64,10 +65,18 @@ tags = ["java", "book", "udk"]
 
 ### Создадим переводы для папок
 В папке **resources** создадим пока три файла: **udc.properties**, **udc_ru_RU.properties**, **udc_en_EN.properties**
-В файл udc_ru_RU.properties вставляем текст из udc.txt и заменяем знаки табуляции, на знак равенства
+В файл **udc_ru_RU.properties** вставляем текст из **udc.txt** и заменяем знаки табуляции, на знак равенства
 ![img_3.png](img_3.png)
 Названия папок для локали ru_RU готовы. Пропускаем текст через google translate для локали en_EN получаем следующее: 
 ![img_4.png](img_4.png)
+
+### Создаем файл настроек
+В папке **resources** создадим файл **config.properties**
+
+Добавляем пока только одну настройку: **library.path**
+В данной настройке будем указывать путь где будем создавать папки.
+
+
 
 ### Пишем скрипт выводящий пару переводов в консоль
 
@@ -104,72 +113,61 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class UTCGenerateFolder {
-    public static void main(String[] args) throws IOException {
-        Locale locale = Locale.getDefault();
-        ResourceBundle rb = ResourceBundle.getBundle("udc", locale);
-        System.out.println(getFolderName(rb, "00"));
-        System.out.println(getFolderName(rb, "00.004"));
-        System.out.println(getFolderName(rb, "00.008"));
+   public static void main(String[] args) throws IOException {
+      Locale locale = Locale.getDefault();
+      ResourceBundle rb = ResourceBundle.getBundle("udc", locale);
+      ResourceBundle config = ResourceBundle.getBundle("config");
+      
+      Class<App> clazz = App.class;
+      InputStream inputStream = clazz.getResourceAsStream("/udc.txt");
+      createAllFolders(inputStream, rb, config.getString("library.path"));
+   }
 
-        Class clazz = UTCGenerateFolder.class;
-        InputStream inputStream = clazz.getResourceAsStream("/udc.txt");
-        String data = readFromInputStream(inputStream, rb);
-        System.out.println(data);
-    }
-
-    private static String readFromInputStream(InputStream inputStream, ResourceBundle rb)
-            throws IOException {
-        StringBuilder resultStringBuilder = new StringBuilder();
-        List<String> pathNames = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
-            String line;
-            int level = 0;
-            while ((line = br.readLine()) != null) {
-                String udcCode = line.replaceAll("\\t[^\\t]+$", "");
-                if (udcCode.startsWith(" ")) {
-                    level = udcCode.split(" {4}").length - 1;
-                    udcCode = udcCode.replaceAll(" ", "");
-                } else {
-                    level = 0;
-                }
-                if (rb.containsKey(udcCode)) {
-                    String folderName = getFolderName(rb, udcCode);
-                    String directoryPath = generateFolderPath(folderName, pathNames, level);
-
-                    File directory = new File("test" + directoryPath);
-                    boolean directoryCreated = directory.mkdir();
-
-                    if (directoryCreated) {
-                        System.out.println("Directory created successfully at: " + directoryPath);
-                    } else {
-                        System.out.println("Failed to create directory. It may already exist at: " + directoryPath);
-                    }
-                    pathNames.add(level, folderName);
-
-                } else {
-                    System.out.println("folderName not in resources: " + udcCode);
-                }
-                resultStringBuilder.append(line).append("\n");
+   private static void createAllFolders(InputStream inputStream, ResourceBundle rb, String libraryPath) throws IOException {
+      List<String> pathNames = new ArrayList<>();
+      try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+         String line;
+         int level;
+         while ((line = br.readLine()) != null) {
+            String udcCode = line.replaceAll("\\t[^\\t]+$", "");
+            if (udcCode.startsWith(" ")) {
+               level = udcCode.split(" {4}").length;
+               udcCode = udcCode.replaceAll(" ", "");
+            } else {
+               level = 1;
             }
-        }
-        return resultStringBuilder.toString();
-    }
+            if (rb.containsKey(udcCode)) {
+               String folderName = getFolderName(rb, udcCode);
+               String directoryPath = generateFolderPath(folderName, pathNames, level);
 
-    private static String generateFolderPath(String folderName, List<String> pathNames, int level) {
-        StringBuilder result = new StringBuilder();
-        for (int index = 0; index < level-1; index++) {
-            result.append("\\").append(pathNames.get(index));
-        }
-        return result.append("\\").append(folderName).toString();
-    }
+               File directory = new File(libraryPath + directoryPath);
+               boolean directoryCreated = directory.mkdir();
 
-    private static String getFolderName(ResourceBundle rb, String udcCode) {
-        String folderName = rb.getString(udcCode);
-        folderName = folderName.replaceAll(":","").replaceAll("/*","")
-                .replaceAll("/\"","").replaceAll("//","")
-                .replaceAll("\\?","").replaceAll("\"","")
-                .replaceAll("/|","").replaceAll("<","").replaceAll(">","");
-        return folderName;
-    }
+               if (directoryCreated) {
+                  System.out.println("Directory created successfully at: " + directoryPath);
+               } else {
+                  System.out.println("Failed to create directory. It may already exist at: " + directoryPath);
+               }
+               pathNames.add(level - 1, folderName);
+            } else {
+               System.out.println("folderName not in resources: " + udcCode);
+            }
+         }
+      }
+   }
+
+   private static String generateFolderPath(String folderName, List<String> pathNames, int level) {
+      StringBuilder result = new StringBuilder();
+      for (int index = 0; index < level - 1; index++) {
+         result.append("\\").append(pathNames.get(index));
+      }
+      return result.append("\\").append(folderName).toString();
+   }
+
+   private static String getFolderName(ResourceBundle rb, String udcCode) {
+      String folderName = rb.getString(udcCode);
+      folderName = folderName.replaceAll("[/*?|<>:\"]","");
+      return folderName;
+   }
 }
 ````
