@@ -120,10 +120,12 @@ java ScanProject.java "d:\project\java\udk-pdf-scanner" "result.txt"
 ```
 
 В файле ScanProject есть два параметра INCLUDED_EXTENSIONS и EXCLUDED_DIRS.
-INCLUDED_EXTENSIONS расширения файлов которые нужно включать в контекст
-EXCLUDED_DIRS папки которые нужно исключить из сканирования.
 
-В result.txt будет примерно текст такого содержания: Дау
+**INCLUDED_EXTENSIONS** расширения файлов которые нужно включать в контекст
+
+**EXCLUDED_DIRS** папки которые нужно исключить из сканирования.
+
+В **result.txt** будет примерно текст такого содержания:
 - структура проекта
 - исходники кода
 
