@@ -1,5 +1,5 @@
 # The URL the site will be built for
-base_url = "www.malexple.ru"
+base_url = "https://www.malexple.ru"
 
 # Отображается в RSS фиде
 title = "Блог Malexple"
