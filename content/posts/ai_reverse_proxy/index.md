@@ -21,7 +21,7 @@ tags = ["java", "ai"]
 Первая версия была предельно простой: Spring WebFlux + `WebClient`, роутинг по первому сегменту пути (`/gemini/...`, `/openai/...`), и конфиг вида:
 
 ```yaml
-textapp:
+app:
   providers:
     gemini:
       base-url: https://generativelanguage.googleapis.com
