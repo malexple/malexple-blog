@@ -210,7 +210,7 @@ public class ProviderConfigLoader implements ApplicationRunner {
 
 ## Что получилось в итоге
 
-Роутинг по пути остался предельно тонким — весь смысл прокси в трёх слоях:
+Роутинг по пути остался предельно тонким — весь смысл прокси:
 
 ```java
 public record ProviderPath(String provider, String path) {
@@ -296,7 +296,7 @@ app:
     dynamic-ip-ttl-minutes: 720
 ```
 
-API не нужна. Достаточно вызвать:
+Контроллера с API создавать не нужно, есть класс с @Configuration. Достаточно вызвать:
 
 ```bash
 curl --request POST \
@@ -310,7 +310,7 @@ curl --request POST \
 
 Тут достаточно все просто. Регистрируетесь в www.render.com. Зайти можно с существующей учеткой от github.
 
-Далее нажимаете New -> Web service. Указывается адрес открытого проекта и нажимаете Connect/
+Далее нажимаете New -> Web service. Указывается адрес открытого проекта и нажимаете Connect.
 
 ![image-20260711180514928](image-20260711180514928.png)
 
@@ -347,7 +347,7 @@ services:
         sync: false
 ```
 
-Если этого не произошло. Зайдите в Environment, и введите вручную
+Если этого не произошло. Зайдите в Environment и добавьте вручную
 
 ![image-20260711181815189](image-20260711181815189.png)
 
@@ -357,7 +357,7 @@ services:
 {"gemini":{"baseUrl":"https://generativelanguage.googleapis.com"},"openai":{"baseUrl":"https://api.openai.com"},"anthropic":{"baseUrl": "https://api.anthropic.com"}}
 ```
 
-Далее нажимаете Save, rebuild and deploy. И ждете пока сервис не перестартует с новыми параметрами.
+Далее нажимаете Save, rebuild and deploy. И ждете пока сервис не запустится с новыми параметрами.
 
 Проверить что сервис стартовал можно так:
 
@@ -400,3 +400,72 @@ curl --request GET \
   --header 'x-goog-api-key: YOU_GEMINI_KEY'
 ```
 
+Теперь можно в настройках openCode поменять только пути к нейросетям. Остальные параметры остаются теже.
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "google": {
+      "npm": "@ai-sdk/google",
+      "name": "Gemini via ai-proxy",
+      "options": {
+        "baseURL": "https://ai-proxy-ol8w.onrender.com/gemini/v1beta/",
+        "apiKey": "YOU_GEMINI_API_KEY"
+      },
+      "models": {
+        "gemini-2.5-flash": { "name": "Gemini 2.5 Flash" },
+        "gemini-2.5-pro": { "name": "Gemini 2.5 Pro" }
+      }
+    }
+  },
+  "model": "google/gemini-2.5-flash"
+}
+```
+
+## Сервис можно запустить через docker-compose
+
+Если у вас есть файл `docker-compose.yml` (я его уже создал для вас), вы можете запустить `ai-proxy` с помощью следующей команды:
+
+```bash
+docker-compose up -d
+```
+
+Эта команда соберет образ (если он еще не собран) и запустит контейнер в фоновом режиме. Доступ к приложению будет по адресу `http://localhost:8080`.
+
+Чтобы остановить контейнер:
+
+```bash
+docker-compose down
+```
+
+### С помощью docker run
+
+Вы также можете запустить образ Docker напрямую, используя команду `docker run`. Замените `malexple/ai-proxy:latest` на актуальный тег образа.
+
+```bash
+docker run -d -p 8080:8080 \
+  -e "PORT=8080" \
+  -e "PROVIDERS_JSON={\"gemini\":{\"baseUrl\":\"https://generativelanguage.googleapis.com\"},\"openai\":{\"baseUrl\":\"https://api.openai.com\"}}" \
+  --name ai-proxy malexple/ai-proxy:latest
+```
+
+В этой команде:
+- `-d` запускает контейнер в фоновом режиме.
+- `-p 8080:8080` сопоставляет порт 8080 вашего хоста с портом 8080 в контейнере.
+- `-e "PORT=8080"` устанавливает переменную среды `PORT` внутри контейнера.
+- `-e "PROVIDERS_JSON=..."` устанавливает переменную среды `PROVIDERS_JSON` для конфигурации прокси. Вам нужно будет заменить содержимое JSON на вашу актуальную конфигурацию.
+- `--name ai-proxy` присваивает имя контейнеру для удобства управления.
+- `malexple/ai-proxy:latest` - это имя и тег образа Docker для запуска.
+
+Чтобы остановить контейнер:
+
+```bash
+docker stop ai-proxy
+```
+
+Чтобы удалить контейнер:
+
+```bash
+docker rm ai-proxy
+```
