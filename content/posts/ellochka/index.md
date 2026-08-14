@@ -3,8 +3,8 @@ title = "Как я перенёс интерпретатор «Эллочка» 
 draft = true
 date = 2026-08-11
 [taxonomies]
-categories = ["java"]
-tags = ["java", "ai", "zig", "ellochka", "dikar"]
+categories = ["zig"]
+tags = ["ai", "zig", "ellochka", "dikar"]
 
 +++
 
