@@ -308,25 +308,45 @@ public class EnrichmentController {
 
 #### Шаг 1: Триггер и первичный поиск
 
-Когда в систему попадает новый ISBN или Название, сервис проверяет локальный кэш/БД (`mt_data` + `mt_indexes`). Если данных нет или их качество низкое (`SourceStatus`), запускается пайплайн.
+Когда в систему попадает новый ISBN или Название, сервис проверяет локальный кэш/БД (`mt_data` + `mt_indexes`). Если данных нет то запускается поиск по внешним сервисам.
 
-#### Шаг 2: Многопоточный обход источников (Aggregation)
+````java
+List<MtData> records = bookQueryService.findByIndexedField(..., "ISBN", normalized);
+if (records.isEmpty()) {
+    MtData enriched = enrichmentService.enrichByIsbn(defaultOrgId, normalized, false);
+    ...
+}
+````
 
-Сервис опрашивает Open Library, Google Books, FantLab. Каждый ответ не просто перезаписывает данные, а **сохраняется с мета-информацией** в JSONB-поле `sources_meta` таблицы `mt_data`:
+Публичный поиск (`SearchController`) вызывает `enrichByIsbn(..., false)` с `allowLlmFallback=false`, то есть LLM fallback для публичного API отключён принудительно, даже если `llm.fallback.enabled=true` в конфиге. 
+
+Пока по факту LLM не работает. После экспериментов поправлю чтобы можно было включать параметром, если сервис запускается локально.
+
+#### Шаг 2: Последовательная цепочка пополнения метаданными
+
+Сервис по очереди пробует опрашивает источники: Open Library → Google Books → FantLab → Sigla → LibGen → LLM fallback (последние три выключены по умолчанию). Как только один ответил успешно, весь его набор полей сохраняется с мета-информацией в JSONB-поле `sources_meta` таблицы `mt_data`, а остальные источники в эту итерацию уже не опрашиваются:
 
 ```json
 {
-  "2": {"source": "litres", "updated_at": "...", "confidence": 0.9}, // Title
-  "6": {"source": "ozon", "updated_at": "...", "confidence": 0.8},   // Publisher
-  "13": {"source": "searxng", "updated_at": "...", "confidence": 0.5} // Description
+  "2": {"source": "openlibrary", "updated_at": "2026-08-18T00:32:00Z", "confidence": 0.7},  // Title
+  "6": {"source": "fantlab", "updated_at": "2026-08-18T00:33:10Z", "confidence": 0.65},      // Publisher
+  "13": {"source": "googlebooks", "updated_at": "2026-08-18T00:31:45Z", "confidence": 0.7}   // Description
 }
 ```
 
-#### Шаг 3: Разрешение конфликтов (Conflict Resolution)
+````java
+JsonNode olBook = openLibraryClient.findByIsbn(isbn);
+if (olBook != null) return persist(..., "openlibrary", 0.7);
+JsonNode gbVolume = googleBooksClient.findByIsbn(isbn);
+if (gbVolume != null) return persist(..., "googlebooks", 0.7);
+// дальше fantlab (0.65) → sigla (0.6) → libgen (0.4) → llmfallback (0.3)
+````
 
-Если Litres вернул одно название, а Ozon другое, система смотрит на `confidence` (уверенность источника) или приоритет поля. Данные с наибольшим весом "побеждают" и записываются в `value2` (Title), а история сохраняется в `mt_field_history`.
+Как только один источник ответил успешно — метод **сразу возвращается**. Возможно потом добавлю многопоточный обход логику разрешения конфликтов через confidence. Пока не придумал как определять confidence для каждого поля.
 
-#### Шаг 4: Ответ пользователю
+`recordHistoryIfChanged` пишет старое/новое значение в `mt_field_history` **только для аудита** — он не решает, оставлять старое значение или нет. По факту сейчас оставляем значения полей от первого истоника от которого получилось получить данные. Но можно сделать по confidence.
+
+#### Шаг 3: Ответ пользователю
 
 Если метаданные нашли то возвращается примерно такой ответ:
 
@@ -455,7 +475,7 @@ curl "https://ваш-домен/api/v1/search/title?q=дорога&fields=Title,
 
 ![image-20260903162244253](image-20260903162244253.png)
 
-В claibre не форкал плагин и не добавлял. Но если будут просьбы добавлю.
+В Calibre не форкал плагин и не добавлял. Но если будут просьбы добавлю.
 
 
 
