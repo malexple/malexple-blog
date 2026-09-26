@@ -86,228 +86,189 @@ ChromeKeePass https://microsoftedge.microsoft.com/addons/detail/chromeipass/dkgm
 Если будет только одна учетка логин и пароль будет заполнен сразу, но перед этим выскочит окошко с предложением подтвердить и сохранить выбор.
 Если учеток несколько для одного URL, то можно выбирать нужную учетку. Удобно когда у тебя несколько тестовых пользователей и периодически приходится переключаться между ними.
 
+В KeePassXC аналогично. Только там немного более безопасный протокол передачи данных.
 
+## Проблема автозаполнения паролей в MAVEN 
+Данная операция не частая, но каждый раз хотел это автоматизировать. Ты меняешь пароль в KeePass и ждешь чтобы он поменялся и в maven.
+В Maven есть механизм генерации хешей. У меня была инструкция, чтобы генерировать хеши, а если ты торопился, то указывал в settings.xml пароли в явном виде. Что совсем не хорошо. 
+В общем мне это надоело и я написал скрипт. Для него не требуются админские права. Кладете как GenerateMavenHashAndUpdate.java c 11 java можно запустить не компилируя.
+На вход скрипт ждет мастер пароль, потом корпоративный пароль и пути к settings.xml и settings-security.xml
 
+```java
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.SecureRandom;
+import java.util.Base64;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 
-# Как мы с нуля пересобрали KeePassHttp: свой плагин на C# и своё браузерное расширение
+public class GenerateMavenHashAndUpdate {
 
-История о том, зачем в 2026 году писать ещё один мост между KeePass и браузером, когда есть KeePassXC-Browser, и что из этого получилось: минималистичный плагин `KeePassHttp2` без единой NuGet-зависимости и лёгкое расширение `keepasshttp2-browser` на WXT.
+   private static final String KDF_ALGORITHM    = "PBKDF2WithHmacSHA256";
+   private static final String CIPHER_TRANSFORM = "AES/GCM/NoPadding";
+   private static final int    KEY_BITS         = 256;
+   private static final int    ITERATIONS       = 10_000;
+   private static final int    SALT_BYTES       = 8;
+   private static final int    IV_BYTES         = 16;
+   private static final int    TAG_BITS         = 128;
 
-## Зачем ещё один KeePassHttp
+   public static void main(String[] args) {
+      if (args.length < 4) {
+         System.err.println(
+                 "Использование: GenerateMavenHashAndUpdate <masterPassword> <domainPassword> " +
+                         "<settings.xml> <settings-security.xml>");
+         System.exit(1);
+      }
 
-Официальный путь для интеграции KeePass с браузером — это либо KeePassXC (отдельное приложение, не оригинальный KeePass 2.x), либо старые плагины типа `KeePassHttp`/`KeePassNatMsg`, которые:
+      String masterPassword = args[0];
+      String domainPassword = args[1];
+      Path   settingsPath   = Paths.get(args[2]);
+      Path   securityPath   = Paths.get(args[3]);
 
-- тянут за собой NuGet-зависимости или нативные DLL;
-- используют HTTP или Native Messaging вместо WebSocket;
-- сложно диагностировать, если что-то не работает — логов почти нет;
-- не всегда прозрачны в том, что именно шлют по сети.
+      try {
+         if (masterPassword == null || masterPassword.isEmpty()) {
+            throw new IllegalArgumentException("masterPassword пуст");
+         }
+         if (domainPassword == null || domainPassword.isEmpty()) {
+            throw new IllegalArgumentException("domainPassword пуст");
+         }
+         if (!Files.exists(settingsPath)) {
+            throw new IllegalArgumentException("Файл не найден: " + settingsPath);
+         }
+         if (!Files.exists(securityPath)) {
+            throw new IllegalArgumentException("Файл не найден: " + securityPath);
+         }
 
-Хотелось получить ровно противоположное: маленький, читаемый, полностью самостоятельный managed-плагин под net48, без пакетов, без нативного кода, и такое же простое расширение под Chromium-браузеры. Так родились два проекта:
+         // 1. Мастер-хеш: мастер-пароль шифруется сам собой → в settings-security.xml
+         String masterHash   = "{" + encrypt(masterPassword, masterPassword) + "}";
+         // 2. Доменный хеш: доменный пароль шифруется мастер-паролем → в settings.xml
+         String domainHash   = "{" + encrypt(domainPassword, masterPassword) + "}";
 
-- **`keepasshttp2`** — плагин для KeePass 2.x на чистом C#.
-- **`keepasshttp2-browser`** — браузерное расширение на TypeScript + [WXT](https://wxt.dev/).
+         System.out.println("[GenerateMavenHashAndUpdate] masterHash = " + masterHash);
+         System.out.println("[GenerateMavenHashAndUpdate] domainHash = " + domainHash);
 
-Оба говорят друг с другом по протоколу, знакомому всем, кто видел исходники **KeePassXC-Browser**: `change-public-keys → test-associate → associate → get-logins`, только реализованному заново, без единой сторонней зависимости с обеих сторон.
+         // 3. Обновляем <master> в settings-security.xml
+         updateMaster(securityPath, masterHash);
+         System.out.println("[GenerateMavenHashAndUpdate] Обновлён <master>: " + securityPath);
 
-## Архитектура протокола
+         // 4. Обновляем ВСЕ <password> в settings.xml
+         int n = updateAllPasswords(settingsPath, domainHash);
+         System.out.println("[GenerateMavenHashAndUpdate] Обновлено <password>: " + n +
+                 " в " + settingsPath);
+      } catch (Exception e) {
+         System.err.println("[GenerateMavenHashAndUpdate] Ошибка: " + e.getMessage());
+         e.printStackTrace();
+         System.exit(100);
+      }
+   }
+   
+   //  Шифрование: PBKDF2(HMAC-SHA256) + AES-GCM, формат Maven
+   private static String encrypt(String plaintext, String masterPassword) throws Exception {
+      SecureRandom rnd = new SecureRandom();
+      byte[] salt = new byte[SALT_BYTES];
+      byte[] iv   = new byte[IV_BYTES];
+      rnd.nextBytes(salt);
+      rnd.nextBytes(iv);
 
-Сама схема не нова — она почти буквально повторяет протокол KeePassXC-Browser:
+      PBEKeySpec spec = new PBEKeySpec(
+              masterPassword.toCharArray(), salt, ITERATIONS, KEY_BITS);
+      byte[] keyBytes = SecretKeyFactory.getInstance(KDF_ALGORITHM)
+              .generateSecret(spec)
+              .getEncoded();
+      SecretKey key = new SecretKeySpec(keyBytes, "AES");
 
-1. **`change-public-keys`** — открытый обмен эфемерными X25519-ключами сессии. Никаких секретов, просто рукопожатие.
-2. **`test-associate`** — клиент спрашивает: "а мы раньше уже договаривались?" Передаёт `id` (имя сопряжения) и `key` (постоянный identity-ключ). На первом подключении `id` пустой — это нормальный, ожидаемый случай, а не ошибка.
-3. **`associate`** — если `test-associate` вернул отрицательный ответ, клиент просит сопряжение. На стороне KeePass всплывает диалог Allow/Deny, пользователь выбирает имя, плагин сохраняет identity-ключ клиента в `CustomData` открытой базы.
-4. **`get-logins`** — обычный запрос: "дай мне записи для этого URL", дальше уже всё в рамках зашифрованного канала.
+      Cipher cipher = Cipher.getInstance(CIPHER_TRANSFORM);
+      cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(TAG_BITS, iv));
+      byte[] ct = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
 
-Всё, что происходит после `change-public-keys`, шифруется NaCl `crypto_box` (X25519 + XSalsa20-Poly1305) с уникальным 24-байтовым nonce на каждое сообщение.
+      byte[] combined = new byte[salt.length + iv.length + ct.length];
+      System.arraycopy(salt, 0, combined, 0, salt.length);
+      System.arraycopy(iv,   0, combined, salt.length, iv.length);
+      System.arraycopy(ct,   0, combined, salt.length + iv.length, ct.length);
 
-```json
-{
-  "action": "test-associate",
-  "message": "<base64 ciphertext>",
-  "nonce": "<base64, 24 bytes>",
-  "clientID": "<random per-session id>"
+      return Base64.getEncoder().encodeToString(combined);
+   }
+   
+   //  Замена ВСЕХ <password>...</password> в settings.xml
+   private static int updateAllPasswords(Path settingsPath, String newValue) throws IOException {
+      String content = Files.readString(settingsPath, StandardCharsets.UTF_8);
+
+      Matcher m = Pattern.compile("<password>[\\s\\S]*?</password>").matcher(content);
+      StringBuilder sb = new StringBuilder();
+      int count = 0;
+      while (m.find()) {
+         m.appendReplacement(sb,
+                 Matcher.quoteReplacement("<password>" + newValue + "</password>"));
+         count++;
+      }
+      m.appendTail(sb);
+
+      if (count == 0) {
+         throw new IllegalStateException(
+                 "В " + settingsPath + " не найдено ни одного <password>");
+      }
+
+      Files.writeString(settingsPath, sb.toString(), StandardCharsets.UTF_8);
+      return count;
+   }
+   
+   //  Замена <master>...</master> в settings-security.xml
+   private static void updateMaster(Path securityPath, String newValue) throws IOException {
+      String content = Files.readString(securityPath, StandardCharsets.UTF_8);
+
+      Matcher m = Pattern.compile("<master>[\\s\\S]*?</master>").matcher(content);
+      if (m.find()) {
+         String updated = content.substring(0, m.start())
+                 + "<master>" + newValue + "</master>"
+                 + content.substring(m.end());
+         Files.writeString(securityPath, updated, StandardCharsets.UTF_8);
+         return;
+      }
+
+      // Если был самозакрывающийся <settingsSecurity/> — превращаем в парный
+      Matcher root = Pattern.compile("<settingsSecurity\\s*/>").matcher(content);
+      if (root.find()) {
+         String updated = content.substring(0, root.start())
+                 + "<settingsSecurity>\n  <master>" + newValue + "</master>\n</settingsSecurity>"
+                 + content.substring(root.end());
+         Files.writeString(securityPath, updated, StandardCharsets.UTF_8);
+         return;
+      }
+
+      // Если <settingsSecurity></settingsSecurity> без <master> — вставляем внутрь
+      Matcher open = Pattern.compile("<settingsSecurity\\s*>").matcher(content);
+      if (open.find()) {
+         int insertAt = open.end();
+         String updated = content.substring(0, insertAt)
+                 + "\n  <master>" + newValue + "</master>\n"
+                 + content.substring(insertAt);
+         Files.writeString(securityPath, updated, StandardCharsets.UTF_8);
+         return;
+      }
+
+      throw new IllegalStateException(
+              "В " + securityPath + " не найден <settingsSecurity>");
+   }
 }
 ```
 
-Внутри `message` после расшифровки лежит обычный плоский JSON вида:
+Но чтобы все это дело было более безопасно мастер пароль будем хранить в KeePass.
 
-```json
-{ "action": "test-associate", "id": "", "key": "<base64 public key>" }
-```
+В KeePass есть возможность задать триггеры и командой передать параметры в скрипт.
 
-## Сервер: KeePassHttp2 на чистом C#
 
-### Принцип: ноль зависимостей
+## Проблема паролей в Gradle
 
-Главное архитектурное решение — файл `KeePassHttp2.csproj` начинается с комментария:
+## Проблема паролей в файлах .env
 
-> This project must have ZERO PackageReference entries and ZERO native DLL dependencies.
-
-Это значит:
-
-- **Никакого `System.Text.Json` или `Newtonsoft.Json`.** Вместо них — рукописный `JsonParser`/`JsonValue`/`JsonWriter` в неймспейсе `KeePassHttp2.Json`. Recursive-descent парсер на ~150 строк, который умеет ровно то, что нужно протоколу: строгие плоские объекты глубиной не больше 2 уровней, явные проверки типа поля вместо "поверил и бросил в модель".
-- **Никакого NuGet-пакета для NaCl.** Вместо этого — **вендоренный** (скопированный как исходники прямо в репозиторий) [Chaos.NaCl](https://github.com/CodesInChaos/Chaos.NaCl): Salsa20, Poly1305, X25519 (Ed25519Ref10) — целиком в папке `Vendor/ChaosNaCl`.
-- **Никакого P/Invoke в Zig-библиотеку.** Раньше в проекте были `NativeCrypto`/`NativeWebSocket`, обёртки над Zig-DLL. Их выпилили в пользу чистого managed-кода: `KeePassHttp2.Crypto.NaClBox` над вендоренным Chaos.NaCl и `KeePassHttp2.Transport.WebSocketServer` над штатным `System.Net.HttpListener`.
-
-Итог — единая DLL, которую в перспективе можно упаковать в один `.plgx`-файл без единого companion-файла и без правок `KeePass.exe.config`.
-
-### Транспорт: WebSocket без внешних библиотек
-
-```csharp
-public void Listen(ushort port)
-{
-    _listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-    _listener.Start();
-}
-```
-
-Оказалось, что `HttpListener.Start()` на loopback-префиксе с нестандартным портом **не требует прав администратора** — распространённый страх на этот счёт на практике не подтвердился (проверено в реальных тестах с `ClientWebSocket`).
-
-Отдельно решили проблему graceful shutdown: `WebSocketServer.Shutdown()` останавливает приём **новых** соединений, но не трогает уже открытое. Поэтому `Terminate()` плагина явно хранит и диспозит активное соединение — иначе KeePass мог зависать при выходе, если браузер держал открытый, но неактивный WebSocket.
-
-### Протокольный слой: строгий и параноидальный
-
-`ProtocolEnvelope` — плоский `record`, который парсится вручную:
-
-```csharp
-private static readonly string[] KnownFields =
-[
-    "action", "clientID", "nonce", "publicKey", "message", "requestID", "triggerUnlock",
-];
-```
-
-Любое незнакомое поле в JSON — сразу отказ. Это осознанная замена той строгости, которую в System.Text.Json давал бы `UnmappedMemberHandling.Disallow`, но без самого System.Text.Json.
-
-Replay-защита — отдельный `NonceTracker`: хранит по каждому `clientID` историю уже увиденных nonce (до 4096 штук на клиента), с чётким контрактом порядка вызовов:
-
-1. Проверить `IsReplay()` **до** попытки расшифровки — это ничего не выдаёт атакующему, потому что nonce и так идёт открытым текстом.
-2. Зарегистрировать nonce через `Register()` **только после** успешной аутентификации Box.Open — иначе можно "спалить" nonce мусорным шифротекстом и заблокировать легитимный повтор запроса.
-
-### Диалог доверия: `associate` — это реальная граница
-
-Комментарий в коде прямо формулирует модель угроз:
-
-> `change-public-keys` is free for anyone to call — it's just an ephemeral key exchange, no secrets. `associate` is the actual trust boundary: it pops up `AssociateDialog` on the KeePass UI thread, and nothing proceeds until a human clicks Allow.
-
-Диалог `AssociateDialog` — простая WinForms-форма с полем "имя сопряжения" и кнопками Allow/Deny. После подтверждения identity-ключ клиента кладётся в `CustomData` текущей открытой базы и база тут же сохраняется — сопряжение переживёт перезапуск KeePass, даже если пользователь никогда явно не нажимал "Сохранить".
-
-`test-associate` на последующих подключениях делает то, что честно описано как известное и осознанное ограничение всего этого класса протоколов:
-
-> matches how KeePassXC-Browser itself does it, including its known limitation that test-associate is a plain key comparison, not a fresh challenge-response proof of possession.
-
-То есть сравнение сохранённого и присланного публичного ключа константным временем (`CryptoBytes.ConstantTimeEquals`) — не криптографическое доказательство владения секретом на каждый конкретный запрос, а признанный компромисс всей экосистемы KeePassHttp-протоколов.
-
-### Забавный баг, который всё это тормозил
-
-На одном этапе разработки сервер стабильно отвечал:
-
-```text
-reject: test-associate: missing id/key
-```
-
-Хотя клиент честно присылал `key`, а `id` — пустую строку, как и полагается **на первом подключении**, когда клиент ещё не знает своего идентификатора сопряжения. Причина была в одной строке:
-
-```csharp
-if (string.IsNullOrEmpty(request.Id) || string.IsNullOrEmpty(request.Key))
-    throw new EnvelopeValidationException("test-associate: missing id/key");
-```
-
-`string.IsNullOrEmpty("")` — это `true`. Пустая строка — валидный штатный сценарий ("у меня пока нет сопряжения"), а не ошибка протокола. Но код кидал исключение, `ServerLoop` его просто логировал и **не отправлял клиенту вообще никакого ответа**. Клиент висел на `ws.onmessage` и падал по таймауту 15 секунд — что идеально совпадало с интервалом между `reject` и `close` в логах.
-
-Фикс — разделить проверки: отсутствие `key` — это реальная ошибка, а пустой `id` — обычный "ещё не знаком" ответ:
-
-```csharp
-if (string.IsNullOrEmpty(request.Key))
-    throw new EnvelopeValidationException("test-associate: missing key");
-
-if (string.IsNullOrEmpty(request.Id))
-{
-    PluginLog.WriteLine("test-associate '': unknown (no prior association)");
-    return FailureResponse();
-}
-```
-
-После этого правки браузер получил свой первый честный `success: "false"`, пошёл дальше по цепочке в `associate`, и в KeePass наконец всплыло окно Allow/Deny.
-
-## Клиент: keepasshttp2-browser на WXT
-
-### Почему WXT, а не голый Manifest V3
-
-[WXT](https://wxt.dev/) — фреймворк для браузерных расширений, который берёт на себя сборку под Manifest V3, TypeScript, HMR в dev-режиме и генерацию `manifest.json` из структуры файлов в `entrypoints/`. Ключевой момент, который стоил нам нескольких итераций дебага: WXT собирает **только** файлы внутри `entrypoints/`, даже если рядом лежит внешне похожая папка `popup/` с правильным кодом — она просто игнорируется. Пока попап реального протокола не оказался буквально в `entrypoints/popup/main.ts`, в браузере честно показывался шаблонный стартовый экран "WXT + TypeScript".
-
-### Протокол на стороне клиента
-
-Криптография — `tweetnacl` и `tweetnacl-util`, тот же алгоритмический набор, что и на сервере (crypto_box, X25519, XSalsa20-Poly1305), только с другой стороны канала:
-
-```ts
-export function encryptJson(
-  payload: unknown,
-  nonce: Uint8Array,
-  theirPublicKey: Uint8Array,
-  mySecretKey: Uint8Array,
-): string {
-  const message = naclUtil.decodeUTF8(JSON.stringify(payload));
-  const ciphertext = nacl.box(message, nonce, theirPublicKey, mySecretKey);
-  return b64(ciphertext);
-}
-```
-
-Особенность MV3 service worker — он может быть выгружен браузером в любой момент простоя. Поэтому `background.ts` не держит постоянного WebSocket-соединения: на каждый вызов из popup — новое соединение, полный проход `change-public-keys → test-associate → (associate) → get-logins`, ответ, закрытие сокета.
-
-Идентификация браузера — постоянная X25519-пара ключей, генерируемая один раз и живущая в `browser.storage.local`, а не в `localStorage` (которого у service worker в MV3 попросту нет):
-
-```ts
-export async function loadIdentity(): Promise<StoredIdentity> {
-  const stored = await browser.storage.local.get(STORAGE_KEY);
-  const existing = stored[STORAGE_KEY] as StoredIdentity | undefined;
-  if (existing) return existing;
-
-  const idKeyPair = nacl.box.keyPair();
-  const identity: StoredIdentity = {
-    idPublicKey: b64(idKeyPair.publicKey),
-    idSecretKey: b64(idKeyPair.secretKey),
-    associationId: null,
-    port: 19455,
-  };
-  await browser.storage.local.set({ [STORAGE_KEY]: identity });
-  return identity;
-}
-```
-
-### Autofill: сознательно минималистичный
-
-Popup сам не может трогать DOM открытого сайта — он живёт на отдельной странице расширения. Поэтому после выбора записи он динамически внедряет `content.ts` через `browser.scripting.executeScript` (права `activeTab` + `scripting`) и отправляет туда сообщение с логином и паролем:
-
-```ts
-const passwordField = document.querySelector<HTMLInputElement>(
-  'input[type="password"]:not([disabled]):not([readonly])',
-);
-
-const loginField = inputs
-  .slice(0, passwordIndex)
-  .reverse()
-  .find((input) => ["text", "email", "tel", "username", ""].includes(input.type));
-```
-
-Эвристика простая и осознанно не претендует на универсальность: находим первое доступное поле пароля, а поле логина ищем как ближайшее текстовое поле перед ним. Значения проставляются через нативный `value`-сеттер прототипа `HTMLInputElement`, чтобы формы на React/Vue/Angular корректно увидели изменение через `input`/`change`-события. И главное — **форма никогда не отправляется автоматически**. Это осознанное решение: автоматический submit — это риск случайно уйти в неправильную форму или отправить данные без возможности проверить их пользователем.
-
-## Чему нас научил этот путь
-
-- **"Zero dependencies" — это не только про безопасность, но и про диагностируемость.** Когда весь стек — от JSON-парсинга до крипто-примитивов — написан руками и лежит в репозитории, отладка сводится к чтению собственного кода, а не гаданию, как повёл себя чужой сериализатор в edge-кейсе.
-- **Пустое значение — не всегда ошибка.** Разница между "поле обязательно, но пустое" и "поле факультативно и означает состояние 'ещё не знаком'" стоила нам самого долгого бага в этой связке.
-- **WebSocket вместо HTTP или Native Messaging — выигрыш в простоте отладки.** Достаточно `HttpListener` на стороне сервера и `WebSocket` в браузере, без установки native messaging host и манипуляций с манифестами для каждого браузера отдельно.
-- **Автозаполнение — это не автологин.** Разделение "подставить значения" и "нажать кнопку входа" — не техническое ограничение, а осознанная граница ответственности расширения.
-
-## Текущий статус и что дальше
-
-Оба проекта — `keepasshttp2` (сервер) и `keepasshttp2-browser` (клиент) — уже проходят полный цикл: сопряжение через Allow/Deny, поиск записей по hostname активной вкладки, шифрованный обмен и подстановку логина/пароля в форму без автоотправки.
-
-В планах:
-
-- более гибкое сопоставление URL (не только по hostname, но и с учётом `submitUrl`);
-- обработка многошаговых форм и полей внутри iframe/Shadow DOM;
-- упаковка плагина в единый `.plgx`;
-- публикация исходников обоих проектов.
-
-Если вы тоже писали что-то подобное на голом managed-коде без сторонних зависимостей — будет интересно сравнить подходы в комментариях.
+## Хранение shh сертификатов и паролей
