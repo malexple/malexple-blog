@@ -1,6 +1,6 @@
 +++
 title = "Секреты в картинках: стеганография + AES-256 на Java 21"
-draft = false
+draft = true
 date = 2026-10-16
 [taxonomies]
 categories = ["java"]
