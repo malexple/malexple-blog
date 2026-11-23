@@ -1,4 +1,11 @@
-# Как я подключил индекс своего Java-проекта к Perplexity через собственный MCP-сервер
++++
+title = "Как я подключил индекс своего Java-проекта к Perplexity через собственный MCP-сервер"
+draft = false
+date = 2026-11-23
+[taxonomies]
+categories = ["Java"]
+tags = ["Java", "SQLite", "Docker Compose", "MCP", "Caddy"]
++++
 
 *Короткий рассказ о том, как из консольной утилиты, которая строит индекс кода в SQLite, получился MCP-сервис на VPS с HTTPS, обновлениями патчами и подключением к Perplexity.*
 
